@@ -1,0 +1,109 @@
+import numpy as np
+from MyVISA.instruments import SpectrumAnalyzer
+
+class SA_RSFPH(SpectrumAnalyzer):
+    """ 
+    Rohde&Schwarz Spectrum Rider FPH
+    """
+
+    def __init__(self, res_string: str):
+        super().__init__(res_string)
+
+        self.core.query('*ESE?')
+        self.core.write('*ESE 61')
+        self.core.write('STAT:QUES:POW:ENAB 4')
+        self.core.write('INST REC')
+        self.core.write('FREQ:MODE SCAN')
+        self.core.write('FORM REAL')
+        self.core.write('INIT:CONT 0')
+        self.core.write('DISP:TRAC:Y:SPAC LOG')
+        self.core.write('DISP:TRAC:STYL POLY')
+
+    def setup_display(self, unit: str | None = None,
+                        ref: int | None = None, scale: int | None = None):
+        if unit is not None:
+            self.core.write('UNIT:POW ' + unit)
+        if ref is not None:
+            self.core.write(f'DISP:TRAC:Y:RLEV {ref}')
+        if scale is not None:
+            self.core.write(f'DISP:TRAC:Y:SCAL {scale}')
+        self._check_registers()
+
+    def setup_meas(self, trac_mode: str | None = None,
+                        cont: int | None = None,
+                        av_num: int | None = None,
+                        det: str | None = None,
+                        cispr: bool | None = False,
+                        fstart: float | None = None,
+                        fstop: float | None = None,
+                        step: float | None = None,
+                        points: int | None = None,
+                        rbw: float | None = None,
+                        t: float | None = None,
+                        att: int | None = None,
+                        gain: int | None = None):
+        if trac_mode is not None:
+            self.core.write(f'DISP:TRAC:MODE {trac_mode}')
+        if cont is not None:
+            if cont in (0, 1):
+                self.core.write(f'INIT:CONT {cont}')
+        if av_num is not None:
+          self.core.write(f'SWE:COUN {av_num}')
+        if det is not None:
+            self.core.write(f'DET {det}')
+        if fstart is not None:
+            self.core.write(f'SCAN:START {fstart} MHz')
+        f1 = float(self.core.query('SCAN:START?'))
+        if fstop is not None:
+            self.core.write(f'SCAN:STOP {fstop} MHz')
+        f2 = float(self.core.query('SCAN:STOP?'))
+        if step is not None and points is None:
+            self.core.write(f'SCAN:STEP {step} kHz')
+        if points is not None and fstart is not None and fstop is not None:
+            step = (fstop-fstart)*1e3/points
+            self.core.write(f'SCAN:STEP {step} kHz')
+        st = float(self.core.query('SCAN:STEP?'))
+        if rbw is not None:
+            match cispr:
+                case False:
+                    self.core.write(f'BAND {rbw} kHz')
+                case True:
+                    self.core.write(f'BAND:CISP {rbw} kHz')
+        if t is not None:
+            self.core.write(f'SWE:TIME {t}')
+        if gain is not None:
+            if gain in (0, 1):
+                self.core.write(f'INP:GAIN:STAT {gain}')
+        if att is not None:
+            self.core.write(f'INP:ATT {att}')
+        self._f_ax = (f1, st, f2)
+        self._check_registers()
+
+    def initiate(self):
+        self._called = False
+        self._status = 'Sweeping...'
+        self.core.write('INIT:IMM; *OPC')
+        self._check_registers()
+
+    def stop(self):
+        self.core.query('*ESR?')
+        self._called = True
+        self._status = 'Ready'
+
+    def get_data(self) -> tuple:
+        try:
+            freqs = np.arange(self._f_ax[0], self._f_ax[2]+self._f_ax[1], self._f_ax[1])
+            data = self.core.query_binary_values('TRAC1:DATA?', datatype='f', container=np.ndarray)
+            self._check_registers()
+            return freqs, data, self._called
+        except Exception:
+            return None, None, self._called
+
+    def save_data(self, filename: str):
+        self.core.write(f"MMEM:STOR:STAT 1,'\Public\Datasets\{filename}.set'")
+        self._check_registers()
+
+    def save_screen(self, filename: str):
+        self.core.write(f"MMEM:NAME '\Public\Screen Shots\{filename}.png'")
+        self.core.write('HCOP')
+        self._check_registers()

@@ -1,0 +1,4 @@
+numpy
+PyVISA
+PyVISA-py
+typing_extensions

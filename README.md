@@ -1,4 +1,4 @@
-Tested with python 3.11 and higher.
+Tested with python 3.11 and higher. Required modules may be installed via running 'pip install -r requirements.txt' in your terminal.
 
 Currently there are a few instrument classes in MyVISA module:
 - 1465F signal generator by Ceyear

@@ -11,4 +11,5 @@ You can easily add your own classes or modify the existing ones.
 Communicate with your programmable instruments via SCPI commands (refer to a programming manual for each specific instrument), automate your measurement tasks and enjoy!
 
 Credit: PyVISA (https://github.com/pyvisa/pyvisa)
+
 Explore the PyVISA documentation to find out all the options: https://pyvisa.readthedocs.io/en/latest/

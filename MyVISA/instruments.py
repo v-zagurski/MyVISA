@@ -19,17 +19,17 @@ class SpectrumAnalyzer:
         self.core.timeout = 1000
         self.core.write_termination = '\n'
         self.core.read_termination = '\n'
-        self._called: bool = False
-        self._status: str = 'Ready'
-        self._idn: str = self.core.query('*IDN?')
+        self.called: bool = False
+        self.status: str = 'Ready'
+        self.idn: str = self.core.query('*IDN?')
         self._f_ax: tuple = (None, None, None)
         self._check_registers()
 
     def _check_registers(self):
         powval = float(self.core.query('STAT:QUES:POW?'))
         if powval != 0:
-            self._called = True
-            self._status = 'Dangerous input level!'
+            self.called = True
+            self.status = 'Dangerous input level!'
 
         operval = float(self.core.query('STAT:OPER:COND?'))
         self._oper = regviewer(operval)
@@ -37,16 +37,16 @@ class SpectrumAnalyzer:
         stbval = float(self.core.query('*STB?'))
         self._stb = regviewer(stbval)
         if 4 in self._stb:
-            self._status = 'Message available!'
+            self.status = 'Message available!'
 
         esrval = float(self.core.query('*ESR?'))
         self._esr = regviewer(esrval)
         if any(value in [2, 3, 4, 5] for value in self._esr):
             err = self.core.query('SYST:ERR?')
-            self._status = f'Error occured! {err}'
+            self.status = f'Error occured! {err}'
         if 0 in self._esr:
-            self._called = True
-            self._status = 'Ready'
+            self.called = True
+            self.status = 'Ready'
 
     def close(self):
         im.close_inst(self._str)
@@ -58,29 +58,29 @@ class Generator:
         self.core.timeout = 1000
         self.core.write_termination = '\n'
         self.core.read_termination = '\n'
-        self._called: bool = False
-        self._status: str = 'Ready'
-        self._idn: str = self.core.query('*IDN?')
+        self.called: bool = False
+        self.status: str = 'Ready'
+        self.idn: str = self.core.query('*IDN?')
 
     def _check_registers(self):
         powval = float(self.core.query('STAT:QUES:POW?'))
         if powval != 0:
-            self._called = True
-            self._status = 'Dangerous input level!'
+            self.called = True
+            self.status = 'Dangerous input level!'
 
         stbval = float(self.core.query('*STB?'))
         self._stb = regviewer(stbval)
         if 4 in self._stb:
-            self._status = 'Message available!'
+            self.status = 'Message available!'
 
         esrval = float(self.core.query('*ESR?'))
         self._esr = regviewer(esrval)
         if any(value in [2, 3, 4, 5] for value in self._esr):
             err = self.core.query('SYST:ERR?')
-            self._status = f'Error occured! {err}'
+            self.status = f'Error occured! {err}'
         if 0 in self._esr:
-            self._called = True
-            self._status = 'Ready'
+            self.called = True
+            self.status = 'Ready'
 
     def close(self):
         im.close_inst(self._str)

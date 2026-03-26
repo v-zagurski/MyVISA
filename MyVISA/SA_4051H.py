@@ -2,10 +2,10 @@ import numpy as np
 from MyVISA.instruments import SpectrumAnalyzer
 
 class SA_4051H(SpectrumAnalyzer):
-    """ 
+    """
     Ceyear 4051H Spectrum Analyzer
     """
-    
+
     def __init__(self, res_string: str):
         super().__init__(res_string)
 
@@ -82,8 +82,8 @@ class SA_4051H(SpectrumAnalyzer):
         self._check_registers()
 
     def initiate(self):
-        self._called = False
-        self._status = 'Sweeping...'
+        self.called = False
+        self.status = 'Sweeping...'
         match any(value in [3, 4] for value in self._oper):
             case True:
                 self.core.write('INIT:REST')
@@ -93,17 +93,17 @@ class SA_4051H(SpectrumAnalyzer):
 
     def stop(self):
         self.core.query('*ESR?')
-        self._called = True
-        self._status = 'Ready'
+        self.called = True
+        self.status = 'Ready'
 
     def get_data(self) -> tuple:
         try:
             freqs = np.linspace(self._f_ax[0], self._f_ax[2], int(self._f_ax[1]))
             data = self.core.query_binary_values('TRAC? TRACE1', datatype='f', container=np.ndarray)
             self._check_registers()
-            return freqs, data, self._called
+            return freqs, data, self.called
         except Exception:
-            return None, None, self._called
+            return None, None, self.called
 
     def save_data(self, filename: str):
         self.core.write(f'MMEM:STOR:TRAC:DATA TRACE1,"D:\{filename}.csv"')
